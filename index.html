@@ -24,13 +24,15 @@
       font-family: Arial, sans-serif;
     }
 
+    /* Esta sección crea el espacio de scroll */
     .scroll-video-section {
       position: relative;
-      height: 600vh;
+      height: 700vh;
       background: #000;
     }
 
-    .video-wrapper {
+    /* Esta parte se queda fija mientras haces scroll */
+    .video-sticky {
       position: sticky;
       top: 0;
       width: 100%;
@@ -39,11 +41,12 @@
       background: #000;
     }
 
+    /* El video ocupa toda la pantalla */
     #scrollVideo {
       position: absolute;
       inset: 0;
-      width: 100vw;
-      height: 100vh;
+      width: 100%;
+      height: 100%;
       object-fit: cover;
       display: block;
       background: #000;
@@ -53,8 +56,8 @@
 
 <body>
 
-  <section class="scroll-video-section">
-    <div class="video-wrapper">
+  <section class="scroll-video-section" id="scrollSection">
+    <div class="video-sticky">
       <video
         id="scrollVideo"
         src="/videos/hero.mp4"
@@ -67,42 +70,44 @@
 
   <script>
     const video = document.getElementById("scrollVideo");
-    const section = document.querySelector(".scroll-video-section");
+    const section = document.getElementById("scrollSection");
 
     let targetTime = 0;
-    let smoothTime = 0;
-    let isVideoReady = false;
+    let currentTime = 0;
+    let videoReady = false;
 
     video.addEventListener("loadedmetadata", () => {
-      isVideoReady = true;
+      videoReady = true;
       video.pause();
       video.currentTime = 0.01;
       updateTargetTime();
-      requestAnimationFrame(smoothScrollVideo);
+      requestAnimationFrame(animateVideo);
     });
 
     function updateTargetTime() {
-      if (!isVideoReady || !video.duration) return;
+      if (!videoReady || !video.duration) return;
 
-      const rect = section.getBoundingClientRect();
-      const scrollableHeight = section.offsetHeight - window.innerHeight;
+      const sectionTop = section.offsetTop;
+      const sectionHeight = section.offsetHeight;
+      const scrollY = window.scrollY;
+      const maxScroll = sectionHeight - window.innerHeight;
 
-      let progress = -rect.top / scrollableHeight;
+      let progress = (scrollY - sectionTop) / maxScroll;
       progress = Math.min(Math.max(progress, 0), 1);
 
       targetTime = video.duration * progress;
     }
 
-    function smoothScrollVideo() {
-      if (isVideoReady && video.duration) {
-        smoothTime += (targetTime - smoothTime) * 0.12;
+    function animateVideo() {
+      if (videoReady && video.duration) {
+        currentTime += (targetTime - currentTime) * 0.1;
 
-        if (Math.abs(video.currentTime - smoothTime) > 0.025) {
-          video.currentTime = smoothTime;
+        if (Math.abs(video.currentTime - currentTime) > 0.02) {
+          video.currentTime = currentTime;
         }
       }
 
-      requestAnimationFrame(smoothScrollVideo);
+      requestAnimationFrame(animateVideo);
     }
 
     window.addEventListener("scroll", updateTargetTime, { passive: true });
