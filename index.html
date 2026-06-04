@@ -24,17 +24,14 @@
       font-family: Arial, sans-serif;
     }
 
-    /* Crea el espacio para hacer scroll */
     .scroll-space {
-      height: 700vh;
+      height: 1000vh;
       background: #000;
     }
 
-    /* El video queda fijo en pantalla completa */
     .video-fixed {
       position: fixed;
-      top: 0;
-      left: 0;
+      inset: 0;
       width: 100vw;
       height: 100vh;
       overflow: hidden;
@@ -69,41 +66,52 @@
   <script>
     const video = document.getElementById("scrollVideo");
 
-    let targetTime = 0;
-    let currentTime = 0;
     let videoReady = false;
+    let ticking = false;
 
     video.addEventListener("loadedmetadata", () => {
       videoReady = true;
       video.pause();
       video.currentTime = 0.01;
-      updateTargetTime();
-      requestAnimationFrame(animateVideo);
+      updateVideoByScroll();
     });
 
-    function updateTargetTime() {
+    video.addEventListener("canplaythrough", () => {
+      videoReady = true;
+      updateVideoByScroll();
+    });
+
+    function updateVideoByScroll() {
       if (!videoReady || !video.duration) return;
 
-      const maxScroll = document.body.scrollHeight - window.innerHeight;
-      const progress = Math.min(Math.max(window.scrollY / maxScroll, 0), 1);
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollY = window.scrollY || window.pageYOffset;
 
-      targetTime = video.duration * progress;
-    }
+      let progress = scrollY / maxScroll;
+      progress = Math.min(Math.max(progress, 0), 1);
 
-    function animateVideo() {
-      if (videoReady && video.duration) {
-        currentTime += (targetTime - currentTime) * 0.12;
+      const targetTime = progress * video.duration;
 
-        if (Math.abs(video.currentTime - currentTime) > 0.02) {
-          video.currentTime = currentTime;
-        }
+      try {
+        video.currentTime = targetTime;
+      } catch (error) {
+        console.log("Video seeking error:", error);
       }
-
-      requestAnimationFrame(animateVideo);
     }
 
-    window.addEventListener("scroll", updateTargetTime, { passive: true });
-    window.addEventListener("resize", updateTargetTime);
+    function onScroll() {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          updateVideoByScroll();
+          ticking = false;
+        });
+
+        ticking = true;
+      }
+    }
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", updateVideoByScroll);
   </script>
 
 </body>
