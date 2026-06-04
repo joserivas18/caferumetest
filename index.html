@@ -33,24 +33,32 @@
   </section>
 
   <script>
-    const video = document.getElementById("scrollVideo");
-    const section = document.querySelector(".scroll-video-section");
+  const video = document.getElementById("scrollVideo");
+  const section = document.querySelector(".scroll-video-section");
 
-    function updateVideoTime() {
-      if (!video.duration) return;
+  video.pause();
 
-      const rect = section.getBoundingClientRect();
-      const scrollableHeight = section.offsetHeight - window.innerHeight;
+  function updateVideoTime() {
+    if (!video.duration) return;
 
-      let progress = -rect.top / scrollableHeight;
-      progress = Math.min(Math.max(progress, 0), 1);
+    const rect = section.getBoundingClientRect();
+    const scrollableHeight = section.offsetHeight - window.innerHeight;
 
-      video.currentTime = progress * video.duration;
-    }
+    let progress = -rect.top / scrollableHeight;
+    progress = Math.min(Math.max(progress, 0), 1);
 
-    window.addEventListener("scroll", updateVideoTime);
-    video.addEventListener("loadedmetadata", updateVideoTime);
-  </script>
+    video.currentTime = video.duration * progress;
+  }
+
+  video.addEventListener("loadedmetadata", () => {
+    video.currentTime = 0.1;
+    video.pause();
+    updateVideoTime();
+  });
+
+  window.addEventListener("scroll", updateVideoTime);
+  window.addEventListener("resize", updateVideoTime);
+</script>
 
 </body>
 </html>
