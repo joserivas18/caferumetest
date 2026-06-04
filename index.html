@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Video Scroll Test 2</title>
+  <title>Scroll Video Section</title>
+
   <style>
     * {
       margin: 0;
@@ -11,24 +12,31 @@
       box-sizing: border-box;
     }
 
+    html,
+    body {
+      width: 100%;
+      min-height: 100%;
+      background: #000;
+      overflow-x: hidden;
+    }
+
     body {
       font-family: Arial, sans-serif;
-      background: #000;
-      color: #fff;
-      overflow-x: hidden;
     }
 
     .scroll-video-section {
       position: relative;
-      height: 400vh;
+      height: 600vh;
       background: #000;
     }
 
     .video-wrapper {
       position: sticky;
       top: 0;
+      width: 100%;
       height: 100vh;
       overflow: hidden;
+      background: #000;
     }
 
     #scrollVideo {
@@ -37,62 +45,8 @@
       width: 100vw;
       height: 100vh;
       object-fit: cover;
-      z-index: 0;
       display: block;
       background: #000;
-    }
-
-    .overlay {
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(
-        to bottom,
-        rgba(0, 0, 0, 0.25),
-        rgba(0, 0, 0, 0.65)
-      );
-      z-index: 1;
-    }
-
-    .content {
-      position: relative;
-      z-index: 2;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 24px;
-    }
-
-    .content h1 {
-      font-size: clamp(48px, 8vw, 120px);
-      font-weight: 800;
-      letter-spacing: -3px;
-    }
-
-    .content p {
-      margin-top: 20px;
-      font-size: clamp(18px, 2vw, 30px);
-      max-width: 700px;
-      opacity: 0.9;
-    }
-
-    .next-section {
-      min-height: 100vh;
-      background: #fff;
-      color: #111;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 40px;
-    }
-
-    .next-section h2 {
-      font-size: clamp(36px, 5vw, 80px);
-      margin-bottom: 20px;
     }
   </style>
 </head>
@@ -103,34 +57,32 @@
     <div class="video-wrapper">
       <video
         id="scrollVideo"
-        src="https://caferumetest.vercel.app/videos/hero.mp4"
+        src="/videos/hero.mp4"
         muted
         playsinline
         preload="auto"
       ></video>
-
-      <div class="overlay"></div>
-
-      <div class="content">
-        <h1>Rume Café</h1>
-        <p>Una experiencia que avanza con cada scroll.</p>
-      </div>
     </div>
-  </section>
-
-  <section class="next-section">
-    <h2>Bienvenido a Rume Café</h2>
-    <p>Aquí comienza el contenido de la página.</p>
   </section>
 
   <script>
     const video = document.getElementById("scrollVideo");
     const section = document.querySelector(".scroll-video-section");
 
-    video.pause();
+    let targetTime = 0;
+    let smoothTime = 0;
+    let isVideoReady = false;
 
-    function updateVideoTime() {
-      if (!video.duration) return;
+    video.addEventListener("loadedmetadata", () => {
+      isVideoReady = true;
+      video.pause();
+      video.currentTime = 0.01;
+      updateTargetTime();
+      requestAnimationFrame(smoothScrollVideo);
+    });
+
+    function updateTargetTime() {
+      if (!isVideoReady || !video.duration) return;
 
       const rect = section.getBoundingClientRect();
       const scrollableHeight = section.offsetHeight - window.innerHeight;
@@ -138,17 +90,23 @@
       let progress = -rect.top / scrollableHeight;
       progress = Math.min(Math.max(progress, 0), 1);
 
-      video.currentTime = video.duration * progress;
+      targetTime = video.duration * progress;
     }
 
-    video.addEventListener("loadedmetadata", () => {
-      video.currentTime = 0.1;
-      video.pause();
-      updateVideoTime();
-    });
+    function smoothScrollVideo() {
+      if (isVideoReady && video.duration) {
+        smoothTime += (targetTime - smoothTime) * 0.12;
 
-    window.addEventListener("scroll", updateVideoTime);
-    window.addEventListener("resize", updateVideoTime);
+        if (Math.abs(video.currentTime - smoothTime) > 0.025) {
+          video.currentTime = smoothTime;
+        }
+      }
+
+      requestAnimationFrame(smoothScrollVideo);
+    }
+
+    window.addEventListener("scroll", updateTargetTime, { passive: true });
+    window.addEventListener("resize", updateTargetTime);
   </script>
 
 </body>
